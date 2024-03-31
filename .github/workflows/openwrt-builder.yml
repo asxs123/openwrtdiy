@@ -20,17 +20,7 @@ on:
         default: 'x86_64'
         type: choice
         options:
-          - 'aarch64'
-          - 'asus_rt-acrh17'
-          - 'd-team_newifi-d2'
-          - 'p2w_r619ac-128m'
-          - 'phicomm_k2p'
-          - 'x86_32'
           - 'x86_64'
-          - 'xiaomi_mi-router-4a-gigabit'
-          - 'xiaomi_redmi-router-ac2100'
-          - 'xiaomi_redmi-router-ax6s'
-          - 'xiaoyu_xy-c5'
       SSH_ACTION:
         description: 'SSH远程配置固件'
         required: false
@@ -70,8 +60,6 @@ env:
   DIY_P2_SH: 
   # 上传 bin 目录。即包含所有 ipk 文件和固件的目录。默认false
   UPLOAD_BIN_DIR: false
-  # 上传固件到 ARTIFACT 。默认false
-  UPLOAD_ARTIFACT: 
   # 时区设置
   TZ: Asia/Shanghai
   GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
@@ -86,29 +74,47 @@ jobs:
 
     # 步骤表示将作为作业的一部分执行的一系列任务
     steps:
-      # 在$GITHUB_WORKSPACE下签出您的存储库，以便您的工作可以访问它
-      - name: 准备结束
-        uses: actions/checkout@v4
+    # 在$GITHUB_WORKSPACE下签出您的存储库,以便您的工作可以访问它
+    - name: 准备结束
+      uses: actions/checkout@v4
 
-      - name: 释放Ubuntu磁盘空间
-        uses: endersonmenezes/free-disk-space@v2
-        with:
-          remove_android: true
-          remove_dotnet: true
-          remove_haskell: true
-          remove_tool_cache: true
-          remove_swap: true
-          remove_packages: "azure-cli google-cloud-cli microsoft-edge-stable google-chrome-stable firefox postgresql* temurin-* *llvm* mysql* dotnet-sdk-*"
-          remove_packages_one_command: true
-          remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share/az* /usr/share/glade* /usr/local/lib/node_modules /usr/local/share/chromium /usr/local/share/powershell"
-          testing: false
+    - name: 释放Ubuntu磁盘空间
+      uses: endersonmenezes/free-disk-space@v2
+      with:
+        remove_android: true
+        remove_dotnet: true
+        remove_haskell: true
+        remove_tool_cache: true
+        remove_swap: true
+        remove_packages: "azure-cli google-cloud-cli microsoft-edge-stable google-chrome-stable firefox postgresql* temurin-* *llvm* mysql* dotnet-sdk-*"
+        remove_packages_one_command: true
+        remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share/az* /usr/share/glade* /usr/local/lib/node_modules /usr/local/share/chromium /usr/local/share/powershell"
+        testing: false
 
-      - name: 部署编译环境
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          source ${GITHUB_WORKSPACE}/build/openwrt/common.sh && Diy_update
-          echo "------------------------------- 设置工作目录及时区 -------------------------------"
-          sudo timedatectl set-timezone "$TZ"
-          sudo mkdir -p /workdir
-          sudo chown $USER:$GROUPS /workdir
+    - name: 部署编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        source ${GITHUB_WORKSPACE}/build/openwrt/common.sh && Diy_update
+        echo "------------------------------- 设置工作目录及时区 -------------------------------"
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+
+    - name: 克隆源码
+      working-directory: /workdir
+      run: |
+        df -hT $PWD
+        git clone $REPO_URL -b ${{ github.event.inputs.REPO_BRANCH }} openwrt
+        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        git clone -b main --depth 1 https://github.com/asxs123/ceshi build/common
+        cp -Rf /workdir/build ${GITHUB_WORKSPACE}/openwrt/build
+        chmod -R +x ${GITHUB_WORKSPACE}/openwrt/build
+
+    - name: 加载自定义 feeds
+      run: |
+        [ -e $FEEDS_CONF ] && cp -r $FEEDS_CONF openwrt/feeds.conf.default
+        chmod +x $DIY_P1_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+        
