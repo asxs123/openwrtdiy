@@ -106,7 +106,7 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b ${{ github.event.inputs.REPO_BRANCH }} openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-        cp -Rf /workdir/build ${GITHUB_WORKSPACE}/openwrt/build
+        cp -Rf ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/openwrt/build
         chmod -R +x ${GITHUB_WORKSPACE}/openwrt/build
 
     - name: 加载自定义 feeds
@@ -166,7 +166,7 @@ jobs:
     - name: 上传文件夹
       uses: actions/upload-artifact@main
       with:
-        name: OpenWrt_bin_${{ env.FILE_DATE }}
+        name: OpenWrt
         path: ${GITHUB_WORKSPACE}
 
     - name: 上传 bin 文件夹
