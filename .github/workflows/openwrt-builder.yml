@@ -51,18 +51,10 @@ env:
   # 源码仓库地址
   REPO_URL: https://github.com/coolsnowwolf/lede
   # 自定义feeds.conf.default文件名
-  FEEDS_CONF: 
-  # 自定义.config文件名
-  CONFIGS: 
-  # 自定义diy-part1.sh文件名
-  DIY_P1_SH: 
-  # 自定义diy-part1.sh文件名
-  DIY_P2_SH: 
   # 上传 bin 目录。即包含所有 ipk 文件和固件的目录。默认false
   UPLOAD_BIN_DIR: true
   # 时区设置
   TZ: Asia/Shanghai
-  GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
 # 工作流运行由一个或多个作业组成，这些作业可以按顺序或并行运行
 jobs:
@@ -77,6 +69,13 @@ jobs:
     # 在$GITHUB_WORKSPACE下签出您的存储库,以便您的工作可以访问它
     - name: 准备结束
       uses: actions/checkout@v4
+
+    - name: 拉取自定义文件
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        bash <(curl -fsSL https://raw.githubusercontent.com/asxs123/ceshi/123/custom/first.sh)
+        # source ${GITHUB_WORKSPACE}/build/${FOLDER_NAME}/settings.ini
+        # source ${GITHUB_WORKSPACE}/build/${{ env.FOLDER_NAME }}/common.sh && Diy_menu1
 
     - name: 释放Ubuntu磁盘空间
       uses: endersonmenezes/free-disk-space@v2
@@ -107,7 +106,6 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b ${{ github.event.inputs.REPO_BRANCH }} openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-        git clone -b main --depth 1 https://github.com/asxs123/ceshi build/common
         cp -Rf /workdir/build ${GITHUB_WORKSPACE}/openwrt/build
         chmod -R +x ${GITHUB_WORKSPACE}/openwrt/build
 
@@ -164,6 +162,13 @@ jobs:
     - name: 检查磁盘空间
       if: (!cancelled())
       run: df -hT
+
+    - name: 上传文件夹
+      uses: actions/upload-artifact@main
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: OpenWrt_bin_${{ env.FILE_DATE }}
+        path: ${GITHUB_WORKSPACE}
 
     - name: 上传 bin 文件夹
       uses: actions/upload-artifact@main
