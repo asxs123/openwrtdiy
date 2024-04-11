@@ -73,7 +73,7 @@ jobs:
     - name: 拉取自定义文件
       run: |
         cd ${GITHUB_WORKSPACE}
-        bash <(curl -fsSL https://raw.githubusercontent.com/asxs123/ceshi/123/custom/first.sh)
+        bash <(curl -fsSL https://raw.githubusercontent.com/asxs123/ceshi/123/first.sh)
         # source ${GITHUB_WORKSPACE}/build/${FOLDER_NAME}/settings.ini
         # source ${GITHUB_WORKSPACE}/build/${{ env.FOLDER_NAME }}/common.sh && Diy_menu1
 
