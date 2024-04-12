@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       REPO_BRANCH:
-        description: 'iStore OS'
+        description: 'iStoreOS'
         required: true
         default: 'istoreos-22.03'
         type: choice
@@ -24,27 +24,32 @@ on:
       SSH_ACTION:
         description: 'SSH远程配置固件'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       UPLOAD_FIRMWARE:
+        description: '上传 bin 目录。即包含所有 ipk 文件和固件的目录到 Github Artifacts'
+        required: false
+        default: true
+        type: boolean
+      UPLOAD_BIN_DIR:
         description: '上传固件到 Github Artifacts'
         required: false
-        default: 'true'
+        default: true
         type: boolean
       UPLOAD_RELEASE:
         description: '发布固件到 Github Releases'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       CACHEWRTBUILD_SWITCH:
         description: '缓存加速编译'
         required: false
-        default: 'true'
+        default: true
         type: boolean
       COMPILATION_INFORMATION:
         description: '是否显示编译信息'
         required: false
-        default: 'true'
+        default: true
         type: boolean
 
 env:
@@ -54,10 +59,8 @@ env:
   RUN_NUMBER: ${{github.run_number}}
   RUN_WORKFLOW: ${{github.workflow}}
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
-  PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
-  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   TZ: Asia/Shanghai
+  DIY_WORK: istoreos2203
 
 jobs:
   build:
@@ -70,32 +73,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [Immortalwrt]
+        target: [iStoreOS]
 
     steps:    
     - name: 准备结束
       uses: actions/checkout@v4
 
-    - name: 检测文件和对比上游版本
+    - name: 拉取自定义文件
       run: |
         cd ${GITHUB_WORKSPACE}
-        bash <(curl -fsSL https://raw.githubusercontent.com/281677160/common/main/custom/first.sh)
-        if [[ -n "${{ github.event.workflow }}" ]] || [[ -n "${{ github.event.schedule }}" ]]; then
-          source ${GITHUB_WORKSPACE}/build/${FOLDER_NAME}/settings.ini
-        else
-          source ${GITHUB_WORKSPACE}/build/${FOLDER_NAME}/relevance/settings.ini
-        fi
-        source ${GITHUB_WORKSPACE}/build/${{ env.FOLDER_NAME }}/common.sh && Diy_menu1
-
-    - name: 清理因转换CPU而停止的工作流程
-      run: |
-        cd ${GITHUB_WORKSPACE}
-        source build/${FOLDER_NAME}/common.sh && Diy_delruns
-
-    - name: CPU检测
-      run: |
-        cd ${GITHUB_WORKSPACE}
-        source build/${FOLDER_NAME}/common.sh && CPU_Priority
+        bash <(curl -fsSL https://raw.githubusercontent.com/asxs123/ceshi/123/first.sh)
 
     - name: 释放Ubuntu磁盘空间
       uses: endersonmenezes/free-disk-space@v2
@@ -114,7 +101,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        source ${GITHUB_WORKSPACE}/build/${{matrix.target}}/common.sh && Diy_update
+        source ${GITHUB_WORKSPACE}/build/common/common.sh && Diy_update
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /${{ env.DIY_WORK }}
         sudo chown ${USER}:${GROUPS} /${{ env.DIY_WORK }}
@@ -126,45 +113,50 @@ jobs:
         ln -sf /${{ env.DIY_WORK }}/openwrt ${GITHUB_WORKSPACE}/openwrt
         cp -Rf ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/openwrt/build
         chmod -R +x ${GITHUB_WORKSPACE}/openwrt/build
-    
-    - name: 公 告
-      run: |
-        cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_menu2
  
-    - name: 更新插件源
+    - name: 加载自定义 feeds
+      env:
+        FEEDS_CONF: openwrt/build/common/iStoreOS/feeds.conf.default
+        DIY_P1_SH: openwrt/build/common/iStoreOS/diy-part1.sh
       run: |
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        chmod +x $DIY_P1_SH
         cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_menu3
- 
-    - name: 加载自定义设置
-      run: |
-        cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_menu4
-        
-    - name: 安装插件源
-      run: |
-        cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_menu5
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+
+    - name: 更新 feeds
+      run: cd openwrt && ./scripts/feeds update -a
+
+    - name: 安装 feeds
+      run: cd openwrt && ./scripts/feeds install -a
 
     - name: 生成"${{matrix.target}}"配置文件
+      env:
+        CONFIG_FILE_PATH: ${GITHUB_WORKSPACE}/openwrt/build/common/${FOLDER_NAME}/${{ github.event.inputs.CONFIG_FILE }}
+        DIY_P2_SH: openwrt/build/common/iStoreOS/diy-part2.sh
       run: |
+        [ -e files ] && mv files openwrt/files
+        [ -e $CONFIG_FILE_PATH ] && mv $CONFIG_FILE_PATH openwrt/.config
+        chmod +x $DIY_P2_SH
         cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_menu6
+        $GITHUB_WORKSPACE/$DIY_P2_SH
+
+    - name: SSH远程连接（make menuconfig）
+      if: ${{ github.event.inputs.SSH_ACTION }} == 'true'
+      uses: danshui-git/debugger-action@main
         
-    - name: 编译信息
-      continue-on-error: true
-      if: env.COMPILATION_INFORMATION == 'true'
-      run: |
-        cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_xinxi
+    - name: 上传配置文件
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.inputs.CONFIG_FILE }}.config
+        path: openwrt/.config
         
     - name: 缓存加速
-      if: env.CACHEWRTBUILD_SWITCH == 'true'
+      if: ${{ github.event.inputs.CACHEWRTBUILD_SWITCH }} == 'true'
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
-        mixkey: "${{ env.TARGET_PROFILE }}"
+        mixkey: "${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}"
         prefix: ${{ github.workspace }}/openwrt
         
     - name: 下载软件包
@@ -173,37 +165,40 @@ jobs:
         cd openwrt
         make defconfig
         make download -j8
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
     
     - name: 开始编译固件
       id: compile
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 V=s
+        make -j$(nproc) || make -j1 || make -j1 V=s
         echo "date=$(date "+%Y%m%d%H%M%S")" >> ${GITHUB_ENV}
-        source ${BUILD_PATH}/common.sh && firmware_jiance
-        
-    - name: 自动打包Amlogic_Rockchip系列固件
-      if: steps.compile.outcome == 'success' && env.PACKAGING_FIRMWARE == 'true'
-      uses: ncipollo/release-action@main
-      with:
-        name: rootfs.tar.gz
-        tag: targz
-        token: ${{ secrets.REPO_TOKEN }}
-        allowUpdates: true
-        replacesArtifacts: true
-        artifacts: openwrt/targz/*rootfs.tar.gz
+        echo "::set-output name=status::success"
 
-    - name: 整理固件文件夹(需配合diy-part.sh设定使用)
-      continue-on-error: true
-      if: steps.compile.outcome == 'success'
-      id: organizer
+    - name: 检查磁盘空间
+      if: (!cancelled())
+      run: df -hT
+
+    - name: 上传 bin 文件夹
+      uses: actions/upload-artifact@main
+      if: steps.compile.outputs.status == 'success' && ${{ github.event.inputs.UPLOAD_BIN_DIR }} == 'true'
+      with:
+        name: ${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}_${{ env.date }}
+        path: openwrt/bin
+
+    - name: 整理固件文件夹
+      id: organize
+      if: ${{ github.event.inputs.UPLOAD_FIRMWARE }} == 'true' && !cancelled()
       run: |
-        cd openwrt
-        source ${BUILD_PATH}/common.sh && Diy_firmware
+        cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
+        rm -rf packages
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "::set-output name=status::success"
         
     - name: 上传固件在 github Artifacts
-      if: steps.compile.outcome == 'success' && env.UPLOAD_FIRMWARE == 'true'
+      if: steps.compile.outcome == 'success' && ${{ github.event.inputs.UPLOAD_FIRMWARE }} == 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE }}-${{ env.LUCI_EDITION }}-${{ env.TARGET_PROFILE }}-firmware-${{ env.Firmware_Date }}
