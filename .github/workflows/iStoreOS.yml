@@ -167,6 +167,12 @@ jobs:
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
+
+    - name: 上传根文件夹
+      uses: actions/upload-artifact@main
+      with:
+        name: istoreos源码
+        path: ${{ github.workspace }}
     
     - name: 开始编译固件
       id: compile
