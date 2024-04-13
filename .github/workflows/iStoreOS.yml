@@ -132,7 +132,7 @@ jobs:
 
     - name: 生成"${{matrix.target}}"配置文件
       env:
-        CONFIG_FILE_PATH: ${GITHUB_WORKSPACE}/openwrt/build/common/${FOLDER_NAME}/${{ github.event.inputs.CONFIG_FILE }}
+        CONFIG_FILE_PATH: ${GITHUB_WORKSPACE}/openwrt/build/common/${env.FOLDER_NAME}/${{ github.event.inputs.CONFIG_FILE }}
         DIY_P2_SH: openwrt/build/common/iStoreOS/diy-part2.sh
       run: |
         [ -e files ] && mv files openwrt/files
