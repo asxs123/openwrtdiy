@@ -171,7 +171,7 @@ jobs:
     - name: 上传根文件夹
       uses: actions/upload-artifact@main
       with:
-        name: istoreos源码
+        name: istoreos Source
         path: ${{ github.workspace }}
     
     - name: 开始编译固件
