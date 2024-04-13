@@ -140,12 +140,6 @@ jobs:
       if: github.event.inputs.SSH_ACTION == 'true'
       uses: mxschmitt/action-tmate@v3.16
         
-    - name: 上传配置文件
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ github.event.inputs.CONFIG_FILE }}.config
-        path: openwrt/.config
-        
     - name: 缓存加速
       if: github.event.inputs.CACHEWRTBUILD_SWITCH == 'true'
       uses: stupidloud/cachewrtbuild@main
@@ -162,6 +156,12 @@ jobs:
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
+
+    - name: 上传配置文件
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.inputs.CONFIG_FILE }}.config
+        path: openwrt/.config
 
     - name: 上传根文件夹
       uses: actions/upload-artifact@main
