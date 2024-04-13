@@ -24,7 +24,7 @@ on:
       SSH_ACTION:
         description: 'SSH远程配置固件'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       UPLOAD_FIRMWARE:
         description: '上传 bin 目录。即包含所有 ipk 文件和固件的目录到 Github Artifacts'
@@ -142,7 +142,7 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: SSH远程连接（make menuconfig）
-      if: ${{ github.event.inputs.SSH_ACTION }} == 'true'
+      if: github.event.inputs.SSH_ACTION == 'true'
       uses: mxschmitt/action-tmate@v3.16
         
     - name: 上传配置文件
@@ -152,7 +152,7 @@ jobs:
         path: openwrt/.config
         
     - name: 缓存加速
-      if: ${{ github.event.inputs.CACHEWRTBUILD_SWITCH }} == 'true'
+      if: github.event.inputs.CACHEWRTBUILD_SWITCH == 'true'
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
@@ -183,14 +183,14 @@ jobs:
 
     - name: 上传 bin 文件夹
       uses: actions/upload-artifact@main
-      if: steps.compile.outputs.status == 'success' && ${{ github.event.inputs.UPLOAD_BIN_DIR }} == 'true'
+      if: steps.compile.outputs.status == 'success' && github.event.inputs.UPLOAD_BIN_DIR == 'true'
       with:
         name: ${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}_${{ env.date }}
         path: openwrt/bin
 
     - name: 整理固件文件夹
       id: organize
-      if: ${{ github.event.inputs.UPLOAD_FIRMWARE }} == 'true' && !cancelled()
+      if: github.event.inputs.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
         rm -rf packages
@@ -198,14 +198,14 @@ jobs:
         echo "::set-output name=status::success"
         
     - name: 上传固件在 github Artifacts
-      if: steps.compile.outcome == 'success' && ${{ github.event.inputs.UPLOAD_FIRMWARE }} == 'true'
+      if: steps.compile.outcome == 'success' && github.event.inputs.UPLOAD_FIRMWARE == 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ github.event.inputs.REPO_BRANCH }}-${{ github.event.inputs.CONFIG_FILE }}-firmware-${{ env.date }}
         path: ${{ env.FIRMWARE }}
     
     - name: 发布固件
-      if: steps.compile.outcome == 'success' && ${{ github.event.inputs.UPLOAD_RELEASE }} == 'true'
+      if: steps.compile.outcome == 'success' && github.event.inputs.UPLOAD_RELEASE == 'true'
       uses: ncipollo/release-action@v1
       with:
         name: ${{ github.event.inputs.REPO_BRANCH }}-${{ github.event.inputs.CONFIG_FILE }}
