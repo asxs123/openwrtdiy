@@ -46,11 +46,6 @@ on:
         required: false
         default: true
         type: boolean
-      COMPILATION_INFORMATION:
-        description: '是否显示编译信息'
-        required: false
-        default: true
-        type: boolean
 
 env:
   GITHUB_LINK: https://github.com/${{github.repository}}
