@@ -24,7 +24,7 @@ on:
       SSH_ACTION:
         description: 'SSH远程配置固件'
         required: false
-        default: false
+        default: 'false'
         type: boolean
       UPLOAD_FIRMWARE:
         description: '上传 bin 目录。即包含所有 ipk 文件和固件的目录到 Github Artifacts'
@@ -143,7 +143,7 @@ jobs:
 
     - name: SSH远程连接（make menuconfig）
       if: ${{ github.event.inputs.SSH_ACTION }} == 'true'
-      uses: danshui-git/debugger-action@main
+      uses: mxschmitt/action-tmate@v3.16
         
     - name: 上传配置文件
       uses: actions/upload-artifact@v4
