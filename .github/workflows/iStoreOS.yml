@@ -27,12 +27,12 @@ on:
         default: false
         type: boolean
       UPLOAD_FIRMWARE:
-        description: '上传 bin 目录。即包含所有 ipk 文件和固件的目录到 Github Artifacts'
+        description: '上传固件到 Github Artifacts'
         required: false
         default: true
         type: boolean
       UPLOAD_BIN_DIR:
-        description: '上传固件到 Github Artifacts'
+        description: '上传 bin 目录。即包含所有 ipk 文件和固件的目录到 Github Artifacts'
         required: false
         default: true
         type: boolean
