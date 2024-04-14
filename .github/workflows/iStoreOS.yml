@@ -163,11 +163,11 @@ jobs:
         name: ${{ github.event.inputs.CONFIG_FILE }}.config
         path: openwrt/.config
 
-    - name: 上传根文件夹
-      uses: actions/upload-artifact@main
-      with:
-        name: istoreos Source
-        path: ${{ github.workspace }}
+    # - name: 上传根文件夹
+    #   uses: actions/upload-artifact@main
+    #   with:
+    #     name: istoreos Source
+    #     path: ${{ github.workspace }}
     
     - name: 开始编译固件
       id: compile
