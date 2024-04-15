@@ -76,13 +76,14 @@ jobs:
         target: [iStoreOS]
 
     steps:    
+    - name: 准备结束
+      uses: actions/checkout@v4
+
     - name: 缓存加速
       if: github.event.inputs.CACHEWRTBUILD_SWITCH_delete == 'true'
       uses: stupidloud/cachewrtbuild@main
       with:
         clean: 'true'
-    - name: 准备结束
-      uses: actions/checkout@v4
 
     - name: 拉取自定义文件
       run: |
