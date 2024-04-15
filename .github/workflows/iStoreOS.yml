@@ -46,11 +46,6 @@ on:
         required: false
         default: true
         type: boolean
-      CACHEWRTBUILD_SWITCH_delete:
-        description: '清理缓存'
-        required: false
-        default: false
-        type: boolean
 
 env:
   GITHUB_LINK: https://github.com/${{github.repository}}
@@ -78,13 +73,6 @@ jobs:
     steps:    
     - name: 准备结束
       uses: actions/checkout@v4
-
-    - name: 缓存加速
-      if: github.event.inputs.CACHEWRTBUILD_SWITCH_delete == 'true'
-      uses: stupidloud/cachewrtbuild@main
-      with:
-        clean: 'true'
-        mixkey: "${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}"
 
     - name: 拉取自定义文件
       run: |
