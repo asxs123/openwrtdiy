@@ -84,6 +84,7 @@ jobs:
       uses: stupidloud/cachewrtbuild@main
       with:
         clean: 'true'
+        mixkey: "${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}"
 
     - name: 拉取自定义文件
       run: |
