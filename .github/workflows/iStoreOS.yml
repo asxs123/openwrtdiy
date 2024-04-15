@@ -147,6 +147,7 @@ jobs:
         ccache: 'true'
         mixkey: "${{matrix.target}}_${{ github.event.inputs.CONFIG_FILE }}"
         prefix: ${{ github.workspace }}/openwrt
+        clean: 'true'
         
     - name: 下载软件包
       id: package
