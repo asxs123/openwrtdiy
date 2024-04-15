@@ -41,6 +41,11 @@ on:
         required: false
         default: true
         type: boolean
+      CACHEWRTBUILD_SWITCH_delete:
+        description: '清理缓存'
+        required: false
+        default: false
+        type: boolean
       COMPILATION_INFORMATION:
         description: '是否显示编译信息'
         required: false
@@ -67,6 +72,12 @@ jobs:
     # 步骤表示将作为作业的一部分执行的一系列任务
     steps:
     # 在$GITHUB_WORKSPACE下签出您的存储库,以便您的工作可以访问它
+    - name: 缓存加速
+      if: github.event.inputs.CACHEWRTBUILD_SWITCH_delete == 'true'
+      uses: stupidloud/cachewrtbuild@main
+      with:
+        clean: 'true'
+        
     - name: 准备结束
       uses: actions/checkout@v4
 
