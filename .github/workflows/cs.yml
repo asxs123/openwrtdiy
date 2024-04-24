@@ -21,7 +21,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [iStoreOS, openwrt]
+        target:
+          - iStoreOS
+          - openwrt
+        url:
+          - https://github.com/istoreos/istoreos
+          - https://github.com/openwrt/openwrt
+        BRANCH:
+          - istoreos-22.03
+          - openwrt-22.03
 
     steps:    
     - name: 准备结束
@@ -57,14 +65,9 @@ jobs:
 
     - name: 下载"${{matrix.target}}"源码
       working-directory: /workdir
-      env:
-        iStoreOSurl: https://github.com/istoreos/istoreos
-        openwrturl: https://github.com/openwrt/openwrt
-        iStoreOSBRANCH: istoreos-22.03
-        openwrtBRANCH: openwrt-22.03
       run: |
         df -hT $PWD
-        git clone ${{ env.${{ matrix.target }}url }} -b ${{ env.${{ matrix.target }}BRANCH }} openwrt
+        git clone ${{ matrix.url }} -b ${{ matrix.target }} openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: 更新 feeds
