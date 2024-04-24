@@ -23,13 +23,14 @@ jobs:
       matrix:
         target:
           - iStoreOS
-          - openwrt
         url:
           - https://github.com/istoreos/istoreos
-          - https://github.com/openwrt/openwrt
         BRANCH:
           - istoreos-22.03
-          - openwrt-22.03
+        include:
+          - target: openwrt
+            url: https://github.com/openwrt/openwrt
+            BRANCH: openwrt-22.03
 
     steps:    
     - name: 准备结束
