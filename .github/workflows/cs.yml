@@ -67,7 +67,7 @@ jobs:
       working-directory: /workdir
       run: |
         df -hT $PWD
-        git clone ${{ matrix.url }} -b ${{ matrix.target }} openwrt
+        git clone ${{ matrix.url }} -b ${{ matrix.BRANCH }} openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: 更新 feeds
