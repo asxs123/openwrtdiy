@@ -64,7 +64,7 @@ jobs:
         openwrtBRANCH: openwrt-22.03
       run: |
         df -hT $PWD
-        git clone ${{ matrix.target }}url -b ${{ matrix.target }}BRANCH openwrt
+        git clone ${{ env.${{ matrix.target }}url }} -b ${{ env.${{ matrix.target }}BRANCH }} openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: 更新 feeds
