@@ -3,10 +3,12 @@
 #
 
 
-name: 编译主程序
+name: cs
 on:
   workflow_dispatch:
 
+env:
+  TZ: Asia/Shanghai
 
 jobs:
   build:
