@@ -15,7 +15,7 @@ jobs:
     - name: 部署编译环境
       run: |
         cd ${GITHUB_WORKSPACE}
-        wget -O /makeself-2.5.0.run https://github.com/megastep/makeself/releases/download/release-2.5.0/makeself-2.5.0.run && chmod +x /makeself-2.5.0.run  && /makeself-2.5.0.run
+        sudo wget -O /makeself-2.5.0.run https://github.com/megastep/makeself/releases/download/release-2.5.0/makeself-2.5.0.run && chmod +x /makeself-2.5.0.run  && /makeself-2.5.0.run
 
 
 
