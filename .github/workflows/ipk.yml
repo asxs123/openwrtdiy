@@ -12,18 +12,10 @@ jobs:
     - name: 准备结束
       uses: actions/checkout@v4
 
-    - name: 部署编译环境
+    - name: 创建归档文件
       run: |
-        cd ${GITHUB_WORKSPACE}
-        sudo wget -O /makeself-2.5.0.run https://github.com/megastep/makeself/releases/download/release-2.5.0/makeself-2.5.0.run && /makeself-2.5.0.run
-
-
-
-
-    # - name: 创建归档文件
-    #   run: |
-    #     ./makeself.sh . "/Users/wukongguoqu/Documents/GitHub/scriptdemo/${1}.run" "${1} script" "./${1}.sh"
-    #     ./makeself.sh --nox11 ./xxx ./out/xxx_x86.run "OneClick install" ./install.sh
+        chmod -R +x ${GITHUB_WORKSPACE}/makeself
+        ${GITHUB_WORKSPACE}/makeself/makeself.sh "${GITHUB_WORKSPACE}/cs.run" "cs script" "${GITHUB_WORKSPACE}/cs.sh"
 
     - name: 上传根文件夹
       uses: actions/upload-artifact@main
