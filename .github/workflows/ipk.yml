@@ -9,5 +9,21 @@ jobs:
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:    
-      - name: 准备结束
+    - name: 准备结束
       uses: actions/checkout@v4
+
+    - name: 部署编译环境
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        bash <(curl -fsSL https://github.com/megastep/makeself/releases/download/release-2.5.0/makeself-2.5.0.run)
+
+    # - name: 创建归档文件
+    #   run: |
+    #     ./makeself.sh . "/Users/wukongguoqu/Documents/GitHub/scriptdemo/${1}.run" "${1} script" "./${1}.sh"
+    #     ./makeself.sh --nox11 ./xxx ./out/xxx_x86.run "OneClick install" ./install.sh
+
+    - name: 上传根文件夹
+      uses: actions/upload-artifact@main
+      with:
+        name: ipk-cs
+        path: ${{ github.workspace }}
