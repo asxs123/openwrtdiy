@@ -3,7 +3,7 @@
 #
 
 
-name: 编译主程序
+name: istoreos-sdk
 on:
   workflow_dispatch:
 
