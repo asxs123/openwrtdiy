@@ -1,0 +1,127 @@
+#
+# 编译主程序,请勿修改文件名称（compile.yml）
+#
+
+
+name: 编译主程序
+on:
+  workflow_dispatch:
+
+env:
+  GITHUB_LINK: https://github.com/${{github.repository}}
+  GIT_ACTOR: ${{github.actor}}
+  GIT_REPOSITORY: ${{github.repository}}
+  RUN_NUMBER: ${{github.run_number}}
+  RUN_WORKFLOW: ${{github.workflow}}
+  TZ: Asia/Shanghai
+  DIY_WORK: istoreos2203
+  REPO_URL: https://github.com/istoreos/istoreos
+  REPO_BRANCH: istoreos-22.03
+
+jobs:
+  build:
+    name: 编译istoreos sdk
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+
+    steps:    
+    - name: 准备结束
+      uses: actions/checkout@v4
+
+    - name: 释放Ubuntu磁盘空间
+      uses: endersonmenezes/free-disk-space@v2
+      with:
+        remove_android: true
+        remove_dotnet: true
+        remove_haskell: true
+        remove_tool_cache: true
+        remove_swap: true
+        remove_packages: "azure-cli google-cloud-cli microsoft-edge-stable google-chrome-stable firefox postgresql* temurin-* *llvm* mysql* dotnet-sdk-*"
+        remove_packages_one_command: true
+        remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share/az* /usr/share/glade* /usr/local/lib/node_modules /usr/local/share/chromium /usr/local/share/powershell"
+        testing: false
+        
+    - name: 部署编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+        bash <(curl -fsSL https://raw.githubusercontent.com/281677160/common/main/custom/ubuntu.sh)
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+
+    - name: 下载源码
+      working-directory: /workdir
+      run: |
+        df -hT $PWD
+        git clone $REPO_URL -b $REPO_BRANCH openwrt
+        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+ 
+    - name: 加载自定义 feeds
+      env:
+        FEEDS_CONF: feeds.conf
+      run: |
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf
+
+    - name: 更新 feeds
+      run: cd openwrt && ./scripts/feeds update -a
+
+    - name: 安装 feeds
+      run: cd openwrt && ./scripts/feeds install -a
+
+    - name: 生成配置文件
+      env:
+        CONFIG_FILE_PATH: config.seed
+      run: |
+        [ -e $CONFIG_FILE_PATH ] && mv $CONFIG_FILE_PATH openwrt/.config
+        
+    - name: 下载软件包
+      id: package
+      run: |
+        cd openwrt
+        make defconfig
+        make download -j8
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+    
+    - name: 开始编译固件
+      id: compile
+      run: |
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "date=$(date "+%Y%m%d%H%M%S")" >> ${GITHUB_ENV}
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: 检查磁盘空间
+      if: (!cancelled())
+      run: df -hT
+
+    - name: 上传 bin 文件夹
+      uses: actions/upload-artifact@main
+      if: steps.compile.outputs.status == 'success' && github.event.inputs.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: istoreos_sdk_${{ env.date }}
+        path: openwrt/bin
+
+    - name: 整理固件文件夹
+      id: organize
+      if: github.event.inputs.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      run: |
+        cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
+        rm -rf packages
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+        
+    - name: 上传固件在 github Artifacts
+      if: steps.compile.outcome == 'success' && github.event.inputs.UPLOAD_FIRMWARE == 'true'
+      uses: actions/upload-artifact@main
+      with:
+        name: istoreos_sdk-firmware-${{ env.date }}
+        path: ${{ env.FIRMWARE }}
