@@ -105,14 +105,12 @@ jobs:
 
     - name: 上传 bin 文件夹
       uses: actions/upload-artifact@main
-      if: steps.compile.outputs.status == 'success' && github.event.inputs.UPLOAD_BIN_DIR == 'true'
       with:
         name: istoreos_sdk_${{ env.date }}
         path: openwrt/bin
 
     - name: 整理固件文件夹
       id: organize
-      if: github.event.inputs.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
         rm -rf packages
@@ -120,7 +118,6 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         
     - name: 上传固件在 github Artifacts
-      if: steps.compile.outcome == 'success' && github.event.inputs.UPLOAD_FIRMWARE == 'true'
       uses: actions/upload-artifact@main
       with:
         name: istoreos_sdk-firmware-${{ env.date }}
