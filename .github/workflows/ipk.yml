@@ -15,7 +15,7 @@ jobs:
     - name: 创建归档文件
       run: |
         chmod -R +x ${GITHUB_WORKSPACE}/makeself
-        ${GITHUB_WORKSPACE}/makeself/makeself.sh ${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/cs.run "cs script" ${GITHUB_WORKSPACE}/cs.sh
+        ${GITHUB_WORKSPACE}/makeself/makeself.sh ${GITHUB_WORKSPACE}/makeself-run ${GITHUB_WORKSPACE}/cs.run "cs script" ${GITHUB_WORKSPACE}/cs.sh
 
     - name: 上传根文件夹
       uses: actions/upload-artifact@main
