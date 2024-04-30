@@ -15,12 +15,12 @@ jobs:
     - name: 创建归档文件
       run: |
         chmod -R +x ${GITHUB_WORKSPACE}/makeself
-        chmod +x ${GITHUB_WORKSPACE}/all.sh
+        # chmod +x ${GITHUB_WORKSPACE}/all.sh
         cd ${GITHUB_WORKSPACE}
-        ./makeself/makeself.sh ./makeself-run ./all.run "cs script" ./all.sh
+        ./makeself/makeself.sh ./makeself-run ./all.run "cs script" ./makeself-run/all.sh
 
     - name: 上传根文件夹
       uses: actions/upload-artifact@main
       with:
         name: ipk-cs
-        path: ${{ github.workspace }}
+        path: ${{ github.workspace }}/all.run
